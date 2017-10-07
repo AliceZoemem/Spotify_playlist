@@ -54,11 +54,20 @@ class Home extends Controller
 
         $access_token_spotify = $obj->access_token;
 
+        // code for Prendere informazioni utente
+        $request_user_info = $client->get('https://api.spotify.com/v1/me', [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $access_token_spotify,
+            ],
+        ]);
+
+
+        dd( response()->json(json_decode($request_user_info->getBody())));
+
+
 
     }
 
-    public function final_call(Request $request){
-        dd($request);
 
-    }
 }

@@ -4,14 +4,18 @@
 
 <head>
     <script src="{{ asset('/js/Gabri.js') }}"></script>
+    <link rel="stylesheet" href="{{ URL::asset('/css/style.css') }}" />
     <title>Spotify</title>
 </head>
 
-<body>
-    <h1>CIAO</h1>
-    {{--<input id="token_invisible" type="hidden" value="{{ csrf_token() }}">--}}
+<body >
+    <div id="intro">
+        <p class="wellcome">Wellcome</p>
+        <img alt="spotify_logo" id="spotify_logo" src="Spotify_Logo_CMYK_White.png">
 
-    <a href="{{$spotify_url}}">AGGIUNGI CANZONE</a>
+    </div>
+
+    <a href="{{$spotify_url}}" ><button class="playlist_button">AGGIUNGI ALLE TUE PLAYLIST</button></a>
 
 
 </body>
