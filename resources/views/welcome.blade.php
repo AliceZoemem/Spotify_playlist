@@ -10,7 +10,7 @@
 
 <body >
     <div id="intro">
-        <p class="wellcome">Wellcome</p>
+        <p class="welcome">Welcome</p>
         <img alt="spotify_logo" id="spotify_logo" src="Spotify_Logo_CMYK_White.png">
 
     </div>
