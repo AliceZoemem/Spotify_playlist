@@ -18,3 +18,8 @@
 
 Route::get('/' , 'Home@getHome');
 Route::get('/callback' , 'Home@write_user_db');
+Route::get('/admin', 'Home@createplaylist');
+
+
+//BQAa09I9s-su7Sisyvo9HL9GGD4TZB2CA3298ZVDG2JglvvbI-
+//

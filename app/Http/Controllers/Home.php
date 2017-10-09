@@ -15,8 +15,8 @@ class Home extends Controller
     public function getHome(Request $request){
 
         $parameters = [
-            'client_id' => '-------',
-            'redirect_uri' => 'http://homestead.app/callback',
+            'client_id' => '3a763d56ebf549c8bb288f11b8216192',
+            'redirect_uri' => 'http://localhost:8080/callback',
             'response_type' => 'code',
             'scope'=>'user-read-private user-read-email playlist-modify-public playlist-read-private playlist-modify-private',
             'state' => '34fFs29kd09',
@@ -36,7 +36,7 @@ class Home extends Controller
 
         $headers = array(
             'Content-Type'=> 'application/x-www-form-urlencoded',
-            'Authorization' => 'Basic ' . base64_encode('client_id:secret_id'),
+            'Authorization' => 'Basic ' . base64_encode('3a763d56ebf549c8bb288f11b8216192:057803be8875411483aecec02894d7c3'),
         );
         $client = new GuzzleHttp\Client();
         $response = $client->request('POST',
@@ -46,7 +46,7 @@ class Home extends Controller
                 'form_params' => array(
                     'grant_type' => 'authorization_code',
                     'code' => $request_code,
-                    'redirect_uri' => 'http://homestead.app/callback'
+                    'redirect_uri' => 'http://localhost:8080/callback'
                 )
             )
         );
@@ -94,6 +94,90 @@ class Home extends Controller
 
 
     }
+    public function createplaylist(){
+        $list_user = Playlist_user::where('injected', false)->get();
+        $client = new GuzzleHttp\Client();
 
+        if($list_user->isEmpty()){
+            echo ("Non ci sono utenti");
+        }else{
+            foreach ($list_user as $user) {
+                $spotify_id = $user->id_user;
+                $spotify_access_token = $user->auth_token;
+                $spotify_refresh_token = $user->refresh_token;
+                try {
+                    $request_user_info = $client->get('https://api.spotify.com/v1/users/' . $spotify_id, [
+                        'headers' => [
+                            'Accept' => 'application/json',
+                            'Authorization' => 'Bearer ' . $spotify_access_token,
+                        ],
+                    ]);
+                    $obj = json_decode($request_user_info->getBody());
+
+                    $new_access_token_spotify = $obj->access_token;
+                }
+                catch (\Exception $e){
+                    //dd("ff");
+                    $response = $client->request('POST',
+                        'https://accounts.spotify.com/api/token',
+                        array(
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Authorization' => 'Basic ' . base64_encode('3a763d56ebf549c8bb288f11b8216192:057803be8875411483aecec02894d7c3'),
+                            ],
+                            'form_params' => array(
+                                'grant_type' => 'refresh_token',
+                                'refresh_token' => $spotify_refresh_token
+                            )
+                        )
+                    );
+                    $obj = json_decode($response->getBody());
+
+                    $new_access_token_spotify = $obj->access_token;
+                    $catch_access_token = Playlist_user::where('id_user', $spotify_id)->first();
+
+                    $catch_access_token->auth_token = $new_access_token_spotify;
+                    $catch_access_token->save();
+                }
+
+                $request_user_playlists = $client->get('https://api.spotify.com/v1/users/' . $spotify_id . '/playlists', [
+                    'headers' => [
+                        'Accept' => 'application/json',
+                        'Authorization' => 'Bearer ' . $new_access_token_spotify,
+                    ],
+                ]);
+                $playlist = json_decode($request_user_playlists->getBody());
+                $playlist_found = false;
+                foreach($playlist->items as $playlist_name){
+                    $single_name = $playlist_name->name;
+                    if($single_name == "In The Town"){
+                        $playlist_found = true;
+                    }
+                }
+                if(!$playlist_found){
+                    $form_params = json_encode(array(
+                        'name' => 'In The Town',
+
+                    ));
+
+                    $create_playlist = $client->request('POST',
+                        'https://api.spotify.com/v1/users/'.$spotify_id .'/playlists',
+                        array(
+                            'headers' => [
+                                'Content-Type' => 'application/json',
+                                'Authorization' => 'Bearer ' . $new_access_token_spotify,
+                            ],
+                            'body' => $form_params
+                        )
+                    );
+                    echo("Creata playlist per " . $spotify_id );
+//                    $catch_access_token->injected = true;
+//                    $catch_access_token->save();
+                }
+
+            }
+
+        }
+    }
 
 }
