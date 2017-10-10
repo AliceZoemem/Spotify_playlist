@@ -14,12 +14,8 @@
 
     </div>
         @foreach ($list_users as $user)
-            <p>Aggiungi canzone a <u>{{ $user->id_user }}</u></p><button >AGGIUNGI</button>
+            <p>Aggiungi canzone a <u>{{ $user->id_user }}</u></p><button href="/playlist/{{$user->id_user}}">AGGIUNGI</button>
         @endforeach
-
-
-
-
 
     </body>
 
