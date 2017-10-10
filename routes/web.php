@@ -18,8 +18,9 @@
 
 Route::get('/' , 'Home@getHome');
 Route::get('/callback' , 'Home@write_user_db');
-Route::get('/admin', 'Home@createplaylist');
 
 Auth::routes();
-
+Route::get('/admin', 'Home@getusers');
+Route::get('/playlist', 'Home@createplaylist');
+Route::get('/playlist_user/{id}', 'Home@createplaylistforuser');
 Route::get('/home', 'HomeController@index')->name('home');

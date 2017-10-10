@@ -29,7 +29,7 @@
 
                     <!-- Branding Image -->
                     <a class="navbar-brand" href="{{ url('/') }}">
-                        {{ config('app.name', 'Laravel') }}
+                        Playlist Gen
                     </a>
                 </div>
 
@@ -76,5 +76,8 @@
 
     <!-- Scripts -->
     <script src="{{ asset('js/app.js') }}"></script>
+    <script>
+        $('div.alert').not('.alert-important').delay(3000).fadeOut(350);
+    </script>
 </body>
 </html>

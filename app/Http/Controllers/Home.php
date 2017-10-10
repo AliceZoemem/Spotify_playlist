@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rules\In;
 use DOMDocument;
+use Illuminate\Http\RedirectResponse;
 use GuzzleHttp;
 
 
@@ -98,12 +99,28 @@ class Home extends Controller
 
 
     }
+    public function getusers(){
+
+        $list_user = Playlist_user::where('injected', false)->get();
+        $client = new GuzzleHttp\Client();
+        if(!$list_user->isEmpty()) {
+            return view('admin', [
+                "list_users"=> $list_user
+            ]);
+        }else{
+            return view('admin',[
+                "list_users"=> $list_user
+            ]);
+        }
+    }
+
     public function createplaylist(){
         $list_user = Playlist_user::where('injected', false)->get();
         $client = new GuzzleHttp\Client();
 
         if($list_user->isEmpty()){
-            $results = "There are no users";
+            flash('Users not found!')->error();
+            return redirect('/admin');
         }else{
             foreach ($list_user as $user) {
                 $spotify_id = $user->id_user;
@@ -178,23 +195,127 @@ class Home extends Controller
 
                     $results = $results. $spotify_id ." ";
                 }
+                $add_song = $client->request('POST',
+                    'https://api.spotify.com/v1/users/'.$spotify_id .'/playlists/'.$playlist_id.'/tracks?uris='.env('SPOTIFY_TRACK_URI'),
+                    array(
+                        'headers' => [
+                            'Accept' => 'application/json',
+                            'Authorization' => 'Bearer ' . $new_access_token_spotify,
+
+                        ]
+                    )
+                );
+                $catch_access_token = Playlist_user::where('id_user', $spotify_id)->first();
+                $catch_access_token->injected = true;
+                $catch_access_token->save();
             }
+
+            flash('Songs pushed!')->success();
+            return redirect('/admin');
+
         }
 
-        $add_song = $client->request('POST',
-            'https://api.spotify.com/v1/users/'.$spotify_id .'/playlists/'.$playlist_id.'/tracks?uris='.env('SPOTIFY_TRACK_URI'),
-            array(
+
+
+    }
+
+    public function createplaylistforuser($id_user){
+        $user = Playlist_user::where('id_user', $id_user)->first();
+
+        $client = new GuzzleHttp\Client();
+
+        if(!$user){
+            flash('User not found!')->error();
+            return redirect('/admin');
+        }else{
+            $spotify_id = $user->id_user;
+            $spotify_access_token = $user->auth_token;
+            $spotify_refresh_token = $user->refresh_token;
+            try {
+                $request_user_info = $client->get('https://api.spotify.com/v1/users/' . $spotify_id, [
+                    'headers' => [
+                        'Accept' => 'application/json',
+                        'Authorization' => 'Bearer ' . $spotify_access_token,
+                    ],
+                ]);
+                $obj = json_decode($request_user_info->getBody());
+
+                $new_access_token_spotify = $obj->access_token;
+            }
+            catch (\Exception $e){
+                $response = $client->request('POST',
+                    'https://accounts.spotify.com/api/token',
+                    array(
+                        'headers' => [
+                            'Accept' => 'application/json',
+
+                            'Authorization' => 'Basic ' . base64_encode(env('SPOTIFY_APP_CLIENT_ID').':'.env('SPOTIFY_APP_SECRET_KEY')),
+
+                        ],
+                        'form_params' => array(
+                            'grant_type' => 'refresh_token',
+                            'refresh_token' => $spotify_refresh_token
+                        )
+                    )
+                );
+                $obj = json_decode($response->getBody());
+
+                $new_access_token_spotify = $obj->access_token;
+                $catch_access_token = Playlist_user::where('id_user', $spotify_id)->first();
+                $catch_access_token->auth_token = $new_access_token_spotify;
+                $catch_access_token->save();
+            }
+            $request_user_playlists = $client->get('https://api.spotify.com/v1/users/' . $spotify_id . '/playlists', [
                 'headers' => [
                     'Accept' => 'application/json',
                     'Authorization' => 'Bearer ' . $new_access_token_spotify,
+                ],
+            ]);
+            $playlist = json_decode($request_user_playlists->getBody());
+            $playlist_found = false;
+            foreach($playlist->items as $playlist_name){
+                $single_name = $playlist_name->name;
+                if($single_name == "In The Town"){
+                    $playlist_found = true;
+                    $playlist_id = $playlist_name->id;
+                    $results= "No playlists create ";
+                }
+            }
+            if(!$playlist_found){
+                $results= "Create new playlist for ";
+                $form_params = json_encode(array(
+                    'name' => 'In The Town',
+                ));
+                $create_playlist = $client->request('POST',
+                    'https://api.spotify.com/v1/users/'.$spotify_id .'/playlists',
+                    array(
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'Authorization' => 'Bearer ' . $new_access_token_spotify,
+                        ],
+                        'body' => $form_params
+                    )
+                );
+                $playlist_id =(json_decode($create_playlist->getBody()))->id;
 
-                ]
-            )
-        );
-        dd($add_song);
-        return view('admin', [
-            "results"=> $results
-        ]);
+                $results = $results. $spotify_id ." ";
+            }
+            $add_song = $client->request('POST',
+                'https://api.spotify.com/v1/users/'.$spotify_id .'/playlists/'.$playlist_id.'/tracks?uris='.env('SPOTIFY_TRACK_URI'),
+                array(
+                    'headers' => [
+                        'Accept' => 'application/json',
+                        'Authorization' => 'Bearer ' . $new_access_token_spotify,
+
+                    ]
+                )
+            );
+            $user->injected = true;
+            $user->save();
+            flash('Song pushed!')->success();
+            return redirect('/admin');
+        }
     }
+
 
 }
