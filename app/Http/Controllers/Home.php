@@ -97,6 +97,21 @@ class Home extends Controller
 
 
     }
+    public function getusers(){
+
+        $list_user = Playlist_user::where('injected', false)->get();
+        $client = new GuzzleHttp\Client();
+        if(!$list_user->isEmpty()) {
+            return view('admin', [
+                "list_users"=> $list_user
+            ]);
+        }else{
+            return view('admin',[
+                "list_users"=> $list_user
+            ]);
+        }
+    }
+
     public function createplaylist(){
         $list_user = Playlist_user::where('injected', false)->get();
         $client = new GuzzleHttp\Client();
@@ -177,23 +192,24 @@ class Home extends Controller
 
                     $results = $results. $spotify_id ." ";
                 }
+                $add_song = $client->request('POST',
+                    'https://api.spotify.com/v1/users/'.$spotify_id .'/playlists/'.$playlist_id.'/tracks?uris='.env('SPOTIFY_TRACK_URI'),
+                    array(
+                        'headers' => [
+                            'Accept' => 'application/json',
+                            'Authorization' => 'Bearer ' . $new_access_token_spotify,
+
+                        ]
+                    )
+                );
+                $catch_access_token = Playlist_user::where('id_user', $spotify_id)->first();
+                $catch_access_token->injected = true;
+                $catch_access_token->save();
             }
         }
 
-        $add_song = $client->request('POST',
-            'https://api.spotify.com/v1/users/'.$spotify_id .'/playlists/'.$playlist_id.'/tracks?uris='.env('SPOTIFY_TRACK_URI'),
-            array(
-                'headers' => [
-                    'Accept' => 'application/json',
-                    'Authorization' => 'Bearer ' . $new_access_token_spotify,
 
-                ]
-            )
-        );
-        dd($add_song);
-        return view('admin', [
-            "results"=> $results
-        ]);
+
     }
 
 }
