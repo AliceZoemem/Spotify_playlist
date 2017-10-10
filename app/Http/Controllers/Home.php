@@ -84,7 +84,8 @@ class Home extends Controller
             $new_user->auth_token = $access_token_spotify;
 
             $new_user->save();
-            $message = "Good Job!";
+            return redirect()->away('http://inthe.town/grazie/');
+
 
         }
         else{
