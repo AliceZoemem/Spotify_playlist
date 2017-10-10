@@ -20,7 +20,7 @@ Route::get('/' , 'Home@getHome');
 Route::get('/callback' , 'Home@write_user_db');
 
 Auth::routes();
-Route::get('/admin', 'Home@getusers');
-Route::get('/playlist', 'Home@createplaylist');
-Route::get('/playlist_user/{id}', 'Home@createplaylistforuser');
+Route::get('/admin', 'Home@getusers')->middleware('auth');
+Route::get('/playlist', 'Home@createplaylist')->middleware('auth');
+Route::get('/playlist_user/{id}', 'Home@createplaylistforuser')->middleware('auth');
 Route::get('/home', 'HomeController@index')->name('home');
