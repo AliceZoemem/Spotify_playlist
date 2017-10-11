@@ -19,8 +19,8 @@ class CreatePlaylistUsersTable extends Migration
             $table->string('uri');
             $table->string('email');
             $table->string('country');
-            $table->string('refresh_token',300);
-            $table->string('auth_token',300);
+            $table->text('refresh_token');
+            $table->text('auth_token');
             $table->boolean('injected')->default(False);
             $table->timestamps();
         });
